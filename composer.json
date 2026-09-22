@@ -1,0 +1,59 @@
+{
+    "name": "grafite/cognitive-load",
+    "description": "An easy to run tooling for analyzing the cognitive load of the code in a Laravel application.",
+    "license": "MIT",
+    "keywords": [
+        "Laravel",
+        "analyzing",
+        "cognitive load",
+        "code quality"
+    ],
+    "authors": [
+        {
+            "name": "Matt Lantz",
+            "email": "mattlantz@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^12.0|^13.0",
+        "illuminate/collections": "^12.0|^13.0",
+        "nikic/php-parser": "^5.0",
+        "symfony/finder": "^7.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0",
+        "mockery/mockery": "^1.0",
+        "laravel/pint": "^1.29",
+        "orchestra/testbench": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Grafite\\CognitiveLoad\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Grafite\\CognitiveLoad\\CognitiveLoadServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts": {
+        "check-style": "vendor/bin/pint --test",
+        "fix-style": "vendor/bin/pint",
+        "test": "XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-clover clover.xml && php coverage-checker.php clover.xml 50"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}
