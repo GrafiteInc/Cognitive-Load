@@ -15,15 +15,21 @@ class FileScanner
      */
     public function scan(array $paths, array $excludePathPatterns = [], array $excludeFilePatterns = []): array
     {
-        $existingPaths = array_values(array_filter($paths, fn (string $path): bool => is_dir($path) || is_file($path)));
+        $directories = array_values(array_filter($paths, fn (string $path): bool => is_dir($path)));
 
-        if ($existingPaths === []) {
-            return [];
+        // Finder only accepts directories, so explicitly named files are added directly.
+        $files = array_values(array_filter(array_map(
+            fn (string $path): string|false => is_file($path) && str_ends_with($path, '.php') ? realpath($path) : false,
+            $paths,
+        )));
+
+        if ($directories === []) {
+            sort($files);
+
+            return $files;
         }
 
-        $finder = (new Finder)->files()->name('*.php')->in($existingPaths);
-
-        $files = [];
+        $finder = (new Finder)->files()->name('*.php')->in($directories);
 
         foreach ($finder as $file) {
             $relativePathname = $file->getRelativePathname();
@@ -40,6 +46,7 @@ class FileScanner
             $files[] = $file->getRealPath();
         }
 
+        $files = array_values(array_unique($files));
         sort($files);
 
         return $files;

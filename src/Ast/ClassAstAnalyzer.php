@@ -2,7 +2,6 @@
 
 namespace Grafite\CognitiveLoad\Ast;
 
-use PhpParser\Error;
 use PhpParser\Node;
 use PhpParser\Node\ComplexType;
 use PhpParser\Node\IntersectionType;
@@ -14,9 +13,6 @@ use PhpParser\Node\Stmt\Trait_;
 use PhpParser\Node\Stmt\Use_;
 use PhpParser\Node\UnionType;
 use PhpParser\NodeFinder;
-use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitor\NameResolver;
-use PhpParser\ParserFactory;
 
 /**
  * Parses a single PHP file into ClassFacts. Vendor/third-party code is never
@@ -30,25 +26,17 @@ class ClassAstAnalyzer
      */
     public function analyzeFile(string $file): array
     {
-        $code = file_get_contents($file);
+        $parsed = (new PhpFileParser)->parse($file);
 
-        if ($code === false) {
-            return ['classes' => [], 'warning' => "Unable to read file: {$file}"];
+        if ($parsed['warning'] !== null) {
+            return ['classes' => [], 'warning' => $parsed['warning']];
         }
 
-        try {
-            $ast = (new ParserFactory)->createForNewestSupportedVersion()->parse($code);
-        } catch (Error $e) {
-            return ['classes' => [], 'warning' => "Parse error in {$file}: {$e->getMessage()}"];
-        }
+        $ast = $parsed['ast'];
 
         if ($ast === null || $ast === []) {
             return ['classes' => [], 'warning' => null];
         }
-
-        $traverser = new NodeTraverser;
-        $traverser->addVisitor(new NameResolver);
-        $ast = $traverser->traverse($ast);
 
         $finder = new NodeFinder;
         $useImports = $this->collectUseImports($finder, $ast);
