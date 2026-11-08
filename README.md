@@ -78,6 +78,59 @@ php artisan cognitive-load:analyse --compare-baseline --fail-on-regression
 
 Commit `cognitive-load-baseline.json` (or your configured `baseline.path`) to the repo, and update it deliberately with `php artisan cognitive-load:baseline --force` whenever a regression is intentional.
 
+## Sloppiness findings
+
+Scores tell you code is *hard to follow*. `cognitive-load:sloppy` tells you it is *sloppy*: swallowed exceptions, half-finished stubs, dead dependencies, Eloquent misuse and copy-paste. It is the kind of debt AI coding agents often leave behind, and it applies equally to hand-written code. It runs as a separate, rule-based pass over the same `paths`/`exclude*` set and never changes the Complexity/Architecture scores.
+
+```php
+php artisan cognitive-load:sloppy
+php artisan cognitive-load:sloppy app/Services --min-severity=medium --format=json
+```
+
+Each finding includes a rule ID, severity, confidence, `file:line`, the symbol (`Class::method`), what is wrong, and what to do about it.
+
+| Rule | Name | Default severity |
+|------|------|------------------|
+| SL101 | Swallowed exception (empty `catch`) | high (low when the catch only holds a comment) |
+| SL102 | Not implemented (`throw new …('Not implemented')`) | high |
+| SL103 | Placeholder comment (`TODO`/`FIXME`/`XXX`/`HACK`) | low (medium when it is the whole body) |
+| SL104 | Empty method | medium |
+| SL105 | Debug leftover (`dd`, `dump`, `var_dump`, `ray`, `->dd()`, …) | high |
+| SL201 | Unused constructor dependency | medium |
+| SL202 | Unused private method | medium |
+| SL203 | Unused private property | medium |
+| SL204 | Unused import | low |
+| SL205 | Redundant boolean return (`return $x ? true : false`) | low |
+| SL206 | Constant condition (`if (true)`, `while (false)`) | medium |
+| SL207 | Commented-out code | low |
+| SL301 | Query in loop | medium |
+| SL302 | Filter after fetch (`Model::all()->where()`, `->get()->count()`) | high |
+| SL303 | Possible N+1 (relation read while looping over a query result) | low |
+| SL304 | `env()` outside `config/` | high |
+| SL305 | Fat controller (too many actions, or `DB::` in a controller) | medium |
+| SL306 | Unvalidated mass assignment (`create($request->all())`) | high |
+| SL401 | Duplicate method body (same body after renaming variables) | medium |
+
+Gate CI on **new** sloppiness only. First snapshot what exists today:
+
+```php
+php artisan cognitive-load:sloppy-baseline
+php artisan cognitive-load:sloppy --fail-on-new
+```
+
+Findings are fingerprinted by rule, file, symbol and the offending code, not by line number, so adding an import or moving a method doesn't make old findings look new. `--fail-on-new` fails only on new findings at or above `sloppy.gate.fail_on` (default `medium`). Without a baseline, every finding counts as new, unless `sloppy.gate.fail_if_baseline_missing` is set, in which case the run fails outright.
+
+`cognitive-load:sloppy` options: `--format=console|json`, `--min-severity=low|medium|high`, `--output=`, `--compare-baseline`, `--fail-on-new` (implies `--compare-baseline`), `--baseline-path=`.
+
+`cognitive-load:sloppy-baseline` options: `--force`, `--baseline-path=`.
+
+The `sloppy` block in `config/cognitive-load.php` lets you disable any rule (`'SL303' => ['enabled' => false]`) or override its `severity`. You can also tune `SL105.functions`, `SL305.max_actions` and `SL401.min_statements`. To add your own rules, list classes implementing `Grafite\CognitiveLoad\Sloppy\Rules\FileRule` (or `ProjectRule` for cross-file checks) under `custom_rules`.
+
+```yaml
+- name: Sloppiness gate
+  run: php artisan cognitive-load:sloppy --fail-on-new
+```
+
 ## Documentation
 
 [https://documentation.grafite.ca/docs/utilities-cognitive-load](https://documentation.grafite.ca/docs/utilities-cognitive-load)
