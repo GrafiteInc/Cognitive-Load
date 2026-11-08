@@ -78,4 +78,60 @@ return [
         'fail_if_baseline_missing' => false,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Sloppiness findings (cognitive-load:sloppy)
+    |--------------------------------------------------------------------------
+    | Rule-based findings that sit beside the scores rather than feeding them.
+    | Scans the same `paths` / `exclude*` set as above. Every rule is on
+    | unless `enabled` is false; any rule accepts a `severity` override.
+    */
+    'sloppy' => [
+        // Findings below this severity are dropped from reports: low, medium or high.
+        'min_severity' => 'low',
+
+        'baseline' => [
+            'path' => base_path('sloppy-baseline.json'),
+        ],
+
+        // `--fail-on-new` fails only on new findings at or above `fail_on`.
+        'gate' => [
+            'fail_on' => 'medium',
+            'fail_if_baseline_missing' => false,
+        ],
+
+        'rules' => [
+            // Unfinished / swallowed
+            'SL101' => ['enabled' => true], // Swallowed exception
+            'SL102' => ['enabled' => true], // Not implemented
+            'SL103' => ['enabled' => true], // Placeholder comment (TODO/FIXME/XXX/HACK)
+            'SL104' => ['enabled' => true], // Empty method
+            'SL105' => ['enabled' => true, 'functions' => ['dd', 'ddd', 'dump', 'var_dump', 'print_r', 'var_export', 'ray']],
+
+            // Dead / redundant
+            'SL201' => ['enabled' => true], // Unused constructor dependency
+            'SL202' => ['enabled' => true], // Unused private method
+            'SL203' => ['enabled' => true], // Unused private property
+            'SL204' => ['enabled' => true], // Unused import
+            'SL205' => ['enabled' => true], // Redundant boolean return
+            'SL206' => ['enabled' => true], // Constant condition
+            'SL207' => ['enabled' => true], // Commented-out code
+
+            // Laravel / Eloquent
+            'SL301' => ['enabled' => true], // Query in loop
+            'SL302' => ['enabled' => true], // Filter after fetch
+            'SL303' => ['enabled' => true], // Possible N+1
+            'SL304' => ['enabled' => true], // env() outside config
+            'SL305' => ['enabled' => true, 'max_actions' => 7], // Fat controller
+            'SL306' => ['enabled' => true], // Unvalidated mass assignment
+
+            // Duplication
+            'SL401' => ['enabled' => true, 'min_statements' => 5], // Duplicate method body
+        ],
+
+        // Your own rules: class names implementing Sloppy\Rules\FileRule or
+        // ProjectRule, or a map of class name => rule config.
+        'custom_rules' => [],
+    ],
+
 ];
